@@ -1,0 +1,118 @@
+package ch.holidayaparment.client;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.JsArray;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.maps.client.MapWidget;
+import com.google.gwt.maps.client.control.LargeMapControl;
+import com.google.gwt.maps.client.geom.LatLng;
+import com.google.gwt.maps.client.overlay.Marker;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.DialogBox;
+import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.maps.client.InfoWindow;
+import com.google.gwt.maps.client.InfoWindowContent;
+import com.google.gwt.maps.client.MapWidget;
+import com.google.gwt.maps.client.Maps;
+import com.google.gwt.maps.client.control.LargeMapControl;
+import com.google.gwt.maps.client.geocode.DirectionQueryOptions;
+import com.google.gwt.maps.client.geocode.Geocoder;
+import com.google.gwt.maps.client.geocode.LocationCallback;
+import com.google.gwt.maps.client.geocode.Placemark;
+import com.google.gwt.maps.client.geom.LatLng;
+import com.google.gwt.maps.client.overlay.Marker;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.VerticalPanel;
+import com.sun.org.apache.xml.internal.security.Init;
+
+/**
+ * Entry point classes define <code>onModuleLoad()</code>.
+ */
+public class HolidayApartment implements EntryPoint {
+    Geocoder geocoder = new Geocoder();
+    MapWidget map;
+
+	/**
+	 * The message displayed to the user when the server cannot be reached or
+	 * returns an error.
+	 */
+	private static final String SERVER_ERROR = "An error occurred while "
+			+ "attempting to contact the server. Please check your network "
+			+ "connection and try again.";
+
+	/**
+	 * Create a remote service proxy to talk to the server-side Greeting service.
+	 */
+	private final GreetingServiceAsync greetingService = GWT
+			.create(GreetingService.class);
+
+	/**
+	 * This is the entry point method.
+	 */
+	public void onModuleLoad() {
+
+		Maps.loadMapsApi("", "2", false, new Runnable() {
+			public void run() {
+				buildMap();
+			}
+		});
+	}
+
+	//----------------------------------
+	//setting up the map
+	//----------------------------------
+	private void buildMap() {
+		//sierre
+		LatLng strPoint = LatLng.newInstance(46.02147484, 7.02147484, true);
+
+		map = new MapWidget(strPoint, 15);
+		map.setSize("400px", "480px");
+		map.setUIToDefault();
+		map.getElement().getStyle().setPropertyPx("margin", 15);
+
+		map.setSize("480px", "450px");
+		// Add some controls for the zoom level
+		map.addControl(new LargeMapControl());
+
+		// Add a marker
+		LatLng cawkerCity = LatLng.newInstance(39.509, -98.434);
+		map.addOverlay(new Marker(cawkerCity));
+
+		//test
+		//showAddress("Münster, VS");
+
+		//opts = new DirectionQueryOptions(map);
+		// Add the map to the HTML host page
+		RootPanel.get().add(map);
+	}
+
+	private void showAddress(final String address) {
+		final InfoWindow info = map.getInfoWindow();
+		geocoder.getLocations(address, new LocationCallback() {
+			public void onFailure(int statusCode) {
+				Window.alert("Sorry, we were unable to geocode that address");
+			}
+
+			public void onSuccess(JsArray<Placemark> locations) {
+				Placemark place = locations.get(0);
+				Marker marker = new Marker(place.getPoint());
+				map.addOverlay(marker);
+				String message = place.getAddress() + "<br>" + "<b>Country code:</b> "
+						+ place.getCountry();
+				info.open(marker, new InfoWindowContent(message));
+			}
+		});
+	}
+	
+}
