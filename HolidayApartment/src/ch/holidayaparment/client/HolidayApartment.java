@@ -7,6 +7,10 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.maps.client.MapWidget;
+import com.google.gwt.maps.client.control.LargeMapControl;
+import com.google.gwt.maps.client.geom.LatLng;
+import com.google.gwt.maps.client.overlay.Marker;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
@@ -15,6 +19,15 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.maps.client.MapWidget;
+import com.google.gwt.maps.client.Maps;
+import com.google.gwt.maps.client.control.LargeMapControl;
+import com.google.gwt.maps.client.geocode.DirectionQueryOptions;
+import com.google.gwt.maps.client.geom.LatLng;
+import com.google.gwt.maps.client.overlay.Marker;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.VerticalPanel;
+import com.sun.org.apache.xml.internal.security.Init;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -38,10 +51,37 @@ public class HolidayApartment implements EntryPoint {
 	 * This is the entry point method.
 	 */
 	public void onModuleLoad() {
-		
-		MainView mv = new MainView();
-		
-		RootPanel.get().add(mv);
 
+		Maps.loadMapsApi("", "2", false, new Runnable() {
+			public void run() {
+				buildMap();
+			}
+		});
 	}
+	
+	//----------------------------------
+		//setting up the map
+		//----------------------------------
+		private void buildMap() {
+			//sierre
+			LatLng strPoint = LatLng.newInstance();
+
+			MapWidget map = new MapWidget(strPoint, 15);
+			map.setSize("400px", "480px");
+			map.setUIToDefault();
+			map.getElement().getStyle().setPropertyPx("margin", 15);
+
+			map.setSize("480px", "450px");
+			// Add some controls for the zoom level
+			map.addControl(new LargeMapControl());
+
+			 // Add a marker
+			LatLng cawkerCity = LatLng.newInstance(39.509, -98.434);
+		    map.addOverlay(new Marker(cawkerCity));
+		    
+			//opts = new DirectionQueryOptions(map);
+			// Add the map to the HTML host page
+			RootPanel.get().add(map);
+		}
+
 }

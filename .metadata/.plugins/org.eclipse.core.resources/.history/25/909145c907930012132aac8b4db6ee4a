@@ -1,0 +1,265 @@
+package ch.holidayaparment.client;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.maps.client.MapWidget;
+import com.google.gwt.maps.client.Maps;
+import com.google.gwt.maps.client.control.LargeMapControl;
+import com.google.gwt.maps.client.geocode.DirectionQueryOptions;
+import com.google.gwt.maps.client.geocode.DirectionResults;
+import com.google.gwt.maps.client.geocode.Directions;
+import com.google.gwt.maps.client.geocode.DirectionsCallback;
+import com.google.gwt.maps.client.geocode.Placemark;
+import com.google.gwt.maps.client.geocode.Route;
+import com.google.gwt.maps.client.geocode.Waypoint;
+import com.google.gwt.maps.client.geocode.DirectionQueryOptions.TravelMode;
+import com.google.gwt.maps.client.geom.LatLng;
+import com.google.gwt.user.client.Window;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.user.client.ui.IsRenderable;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.Widget;
+
+//----------------------------------
+//GUI for planing the training
+//----------------------------------
+public class MainView extends Composite {
+	// Position of the map by inizialisation
+	LatLng strPoint;
+	HorizontalPanel hPanel = new HorizontalPanel();
+	private TextBox startPoint = new TextBox();
+	private TextBox endPoint = new TextBox();
+	private TextBox intPoint [] = new TextBox[5];
+	private DirectionQueryOptions opts;
+	private HorizontalPanel hPanelDate=new HorizontalPanel();
+	private HorizontalPanel hPanelButtons=new HorizontalPanel();
+	private HorizontalPanel empty=new HorizontalPanel();
+
+	/**
+	 * Create a remote service proxy to talk to the server-side Greeting service.
+	 */
+	private final GreetingServiceAsync greetingService = GWT
+			.create(GreetingService.class);
+
+	//Set up a list to read the Waypoints
+	private ArrayList<Waypoint> wpNames;
+
+
+	ListBox lbDay=new ListBox();
+	ListBox lbMonth=new ListBox();
+	ListBox lbYear=new ListBox();
+	ListBox comboBox=new ListBox();
+
+
+	public MainView(){
+		initWidget(hPanel);
+		//load the maps - API-KEY - API LEVEL 2
+		Maps.loadMapsApi("AIzaSyAzRnAtCDguAVCno8E87J6cE3CvGrhziWg", "2", false, new Runnable() {
+			public void run() {
+				buildMap();
+				buildTable();
+			}
+		});
+
+	}
+
+	//----------------------------------
+	//setting up the map
+	//----------------------------------
+	private void buildMap() {
+		MapWidget map = new MapWidget(strPoint, 15);
+		map.setSize("400px", "480px");
+		map.setUIToDefault();
+		map.getElement().getStyle().setPropertyPx("margin", 15);
+
+		map.setSize("480px", "450px");
+		// Add some controls for the zoom level
+		map.addControl(new LargeMapControl());
+
+		opts = new DirectionQueryOptions(map);
+		// Add the map to the HTML host page
+		hPanel.add(map);
+	}
+
+	//----------------------------------
+	//setting up the flex table
+	//list boxes - Buttons
+	//----------------------------------
+	private void buildTable(){
+		//inizialise listbox intPoint
+		for (int i = 0; i <5; i++) {
+			intPoint[i] = new TextBox();
+		}
+
+		//Waypoints entry
+		FlexTable flexTable = new FlexTable();
+		flexTable.setSize("338px", "458px");
+
+		Label lblType = new Label("Type:");
+		flexTable.setWidget(0, 0, lblType);
+
+		this.comboBox.addItem("running");
+		this.comboBox.addItem("cycling");
+		this.comboBox.addItem("cross-country");
+		flexTable.setWidget(0, 1, this.comboBox);
+
+		Label lblNewLabel = new Label("Date:");
+		flexTable.setWidget(2, 0, lblNewLabel);
+
+		for (int i = 1; i < 32; i++) {
+			this.lbDay.addItem(i+"");
+		}
+		for (int i = 1; i < 13; i++) {
+			this.lbMonth.addItem(i+"");
+		}
+		Date currentYear=new Date();
+		for (int i = currentYear.getYear()+1900; i < currentYear.getYear()+1906; i++) {
+			this.lbYear.addItem(i+"");
+		}
+
+		this.hPanelDate.add(this.lbDay);
+		this.hPanelDate.add(new Label(" / "));
+		this.hPanelDate.add(this.lbMonth);
+		this.hPanelDate.add(new Label(" / "));
+		this.hPanelDate.add(this.lbYear);
+
+		flexTable.setWidget(2, 1, this.hPanelDate);
+
+		Label lblInformations = new Label("Waypoints:");
+		flexTable.setWidget(4, 0, lblInformations);
+
+		Label lblStart = new Label("Start:");
+		flexTable.setWidget(6, 0, lblStart);
+
+		Label lblInter = new Label("Intermediate:");
+		flexTable.setWidget(6, 1, lblInter);
+
+		flexTable.setWidget(7, 0, startPoint);
+		flexTable.setWidget(7, 1, intPoint[0]);
+
+		Label lblEnd = new Label("End:");
+		flexTable.setWidget(8, 0, lblEnd);
+		flexTable.setWidget(8, 1, intPoint[1]);
+		flexTable.setWidget(9, 0, endPoint);
+		flexTable.setWidget(9, 1, intPoint[2]);
+		flexTable.setWidget(10, 1, intPoint[3]);
+		flexTable.setWidget(11, 1, intPoint[4]);
+
+		this.empty.setPixelSize(10, 0);
+
+		Button btnCheck = new Button("Check");
+		Button btnSave = new Button("Save");
+		this.hPanelButtons.add(btnCheck);
+		this.hPanelButtons.add(empty);
+		this.hPanelButtons.add(btnSave);
+		flexTable.setWidget(13, 0, this.hPanelButtons);
+
+		// Add the flex-table
+		hPanel.add(flexTable);
+
+		//button handler
+		CheckButtonHandler checkHandler = new CheckButtonHandler();
+		btnCheck.addClickHandler(checkHandler);
+		SaveButtonHandler saveHandler = new SaveButtonHandler();
+		btnSave.addClickHandler(saveHandler);
+
+	}
+
+	//Handler for Planning
+	class SaveButtonHandler implements ClickHandler {
+		@Override
+		public void onClick(ClickEvent event) {
+			if (!wpNames.isEmpty()) {
+
+				String type=comboBox.getItemText(comboBox.getSelectedIndex());
+				int year=Integer.parseInt(lbYear.getItemText(lbYear.getSelectedIndex()))-1900;
+				int month=Integer.parseInt(lbMonth.getItemText(lbMonth.getSelectedIndex()))-1;
+				int day=Integer.parseInt(lbDay.getItemText(lbDay.getSelectedIndex()));
+				Date date=new Date(year, month, day);
+				ArrayList<String> points=new ArrayList<String>();
+				for (int i = 0; i < wpNames.size(); i++) {
+					points.add(wpNames.get(i).toString());
+				}
+
+				
+			}else{
+				Window.alert("Check befor Save!");
+			}
+		}
+	}
+
+	//Handler for Planning -> Check
+	class CheckButtonHandler implements ClickHandler {
+
+		@Override
+		public void onClick(ClickEvent event) {
+
+			//Allway reset the ArrayList in case there is a wrong entry for a route
+			wpNames = new ArrayList<Waypoint>();
+
+			//Start and end point have to be set
+			if (startPoint.getText().length() < 1 || endPoint.getText().length() < 1) {
+				Window.alert("Please enter a start and end point");
+				return;
+			}
+
+			//add start point
+			wpNames.add(new Waypoint(startPoint.getText()));
+
+			//add intermediate points if there are some =)
+			for (int i = 0; i < intPoint.length; i++) {
+
+				if (intPoint[i].getText().length() > 1) {
+					wpNames.add(new Waypoint(intPoint[i].getText()));
+				}
+			}
+
+			//add the end point
+			wpNames.add(new Waypoint(endPoint.getText()));
+
+			Waypoint[] waypoints = (Waypoint[]) wpNames.toArray(new Waypoint[wpNames.size()]);
+
+			// Create directions
+			// stops along the way.
+
+
+			Directions.loadFromWaypoints(waypoints, opts, new DirectionsCallback() {
+
+
+				public void onFailure(int statusCode) {
+					Window.alert("Failed to load directions. " +
+							"Please make sure all your entries are correct " + statusCode);
+				}
+
+				public void onSuccess(DirectionResults result) {
+					GWT.log("Successfully loaded directions.", null);
+
+					// A little exercise of the route API
+					List<Route> routes = result.getRoutes();
+				
+					for (Route r : routes) {
+						Placemark start = r.getStartGeocode();
+						GWT.log("start of route: " + start.getAddress(), null);
+						Placemark end = r.getEndGeocode();
+						GWT.log("end of route: " + end.getAddress(), null);
+					}
+				}
+			});
+
+		}
+	}
+
+}

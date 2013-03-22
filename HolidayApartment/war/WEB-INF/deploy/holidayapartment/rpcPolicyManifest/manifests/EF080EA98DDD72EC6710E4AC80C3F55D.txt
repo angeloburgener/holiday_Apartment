@@ -1,0 +1,2 @@
+serviceClass: ch.holidayaparment.client.GreetingService
+path: E617FE24C5D0B1BC9ED1D4A612211973.gwt.rpc
