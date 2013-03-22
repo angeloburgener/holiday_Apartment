@@ -1,0 +1,10 @@
+package ch.holidayaparment.client;
+
+import com.google.appengine.api.images.Composite;
+
+public class MainView extends Composite {
+
+	public MainView(){
+		
+	}
+}
